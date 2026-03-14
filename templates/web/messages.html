@@ -1,0 +1,205 @@
+{% extends 'web/base.html' %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<div class="stack">
+  <section class="page-head">
+    <h1>Messages</h1>
+    <p>Send updates quickly and reuse templates for recurring communication.</p>
+  </section>
+
+  <section class="split-grid">
+    <article class="card">
+      <div class="card-head">
+        <h2>Send Message</h2>
+        <span class="muted">Choose template or write custom.</span>
+      </div>
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="send_message" />
+        <label class="field span-2">
+          <span>Template</span>
+          <select name="template_id" id="message-template">
+            <option value="">(no template)</option>
+            {% for t in message_templates %}
+              <option
+                value="{{ t.id }}"
+                data-channel="{{ t.channel }}"
+                data-subject="{{ t.subject|escape }}"
+                {% if selected_message_template and selected_message_template.id == t.id %}selected{% endif %}
+              >
+                {{ t.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field">
+          <span>Channel</span>
+          <select name="channel" id="message-channel">
+            <option value="email" {% if selected_message_template and selected_message_template.channel == 'email' %}selected{% endif %}>email</option>
+            <option value="sms" {% if selected_message_template and selected_message_template.channel == 'sms' %}selected{% endif %}>sms</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>To Email</span>
+          <input name="to_email" placeholder="required for email" />
+        </label>
+        <label class="field">
+          <span>To Phone</span>
+          <input name="to_phone" placeholder="required for sms" />
+        </label>
+        <label class="field span-2">
+          <span>Subject</span>
+          <input
+            id="message-subject"
+            name="subject"
+            value="{% if selected_message_template %}{{ selected_message_template.subject }}{% else %}Update{% endif %}"
+          />
+        </label>
+        <label class="field span-2">
+          <span>Body</span>
+          <textarea id="message-body" name="body" required>{% if selected_message_template %}{{ selected_message_template.body }}{% endif %}</textarea>
+        </label>
+        <button type="submit" title="Queues then immediately processes due messages">Queue + Send</button>
+      </form>
+      <div id="message-template-cache" style="display: none;">
+        {% for t in message_templates %}
+          <textarea data-template-body="{{ t.id }}">{{ t.body }}</textarea>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h2>Save Template</h2>
+      </div>
+      <p class="muted" style="margin-bottom: 0.7rem;">
+        Save once, then reuse for reminders, cancellations, and term updates.
+      </p>
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_template" />
+        <label class="field span-2">
+          <span>Template Name</span>
+          <input
+            name="template_name"
+            required
+            placeholder="Lesson reminder"
+            value="{% if selected_message_template %}{{ selected_message_template.name }}{% endif %}"
+          />
+        </label>
+        <label class="field">
+          <span>Channel</span>
+          <select name="template_channel">
+            <option value="email" {% if not selected_message_template or selected_message_template.channel == 'email' %}selected{% endif %}>email</option>
+            <option value="sms" {% if selected_message_template and selected_message_template.channel == 'sms' %}selected{% endif %}>sms</option>
+          </select>
+        </label>
+        <label class="field span-2">
+          <span>Subject</span>
+          <input
+            name="template_subject"
+            value="{% if selected_message_template %}{{ selected_message_template.subject }}{% endif %}"
+            placeholder="Tomorrow's lesson reminder"
+          />
+        </label>
+        <label class="field span-2">
+          <span>Body</span>
+          <textarea name="template_body" required placeholder="Hi, quick reminder that lesson starts at 4pm.">{% if selected_message_template %}{{ selected_message_template.body }}{% endif %}</textarea>
+        </label>
+        <button type="submit">Save Template</button>
+      </form>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Templates</h2>
+      <span class="muted">{{ message_templates|length }} active</span>
+    </div>
+    <div class="inline-actions" style="margin-bottom: 0.6rem;">
+      {% for t in message_templates %}
+        <a class="text-link" href="/app/messages/?template_id={{ t.id }}" title="Load this template in the forms">{{ t.name }}</a>
+      {% empty %}
+        <span class="muted">No templates yet.</span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Delivery Log</h2>
+      <span class="muted">{{ logs|length }} recent</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Channel</th>
+            <th>Recipient</th>
+            <th>Status</th>
+            <th>Retries</th>
+            <th>Sent</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in logs %}
+            <tr>
+              <td>{{ m.channel }}</td>
+              <td>{% if m.to_email %}{{ m.to_email }}{% else %}{{ m.to_phone }}{% endif %}</td>
+              <td>
+                {% if m.status == 'sent' %}
+                  <span class="pill success">sent</span>
+                {% elif m.status == 'failed' %}
+                  <span class="pill error">failed</span>
+                {% else %}
+                  <span class="pill">{{ m.status }}</span>
+                {% endif %}
+              </td>
+              <td>{{ m.retry_count }}</td>
+              <td>{% if m.sent_at %}{{ m.sent_at|date:"SHORT_DATETIME_FORMAT" }}{% else %}-{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="muted">No message logs yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script>
+  (() => {
+    const templateSelect = document.getElementById("message-template");
+    const channel = document.getElementById("message-channel");
+    const subject = document.getElementById("message-subject");
+    const body = document.getElementById("message-body");
+    if (!templateSelect || !channel || !subject || !body) {
+      return;
+    }
+
+    templateSelect.addEventListener("change", () => {
+      const option = templateSelect.options[templateSelect.selectedIndex];
+      if (!option || !option.value) {
+        return;
+      }
+      const selectedChannel = option.getAttribute("data-channel");
+      const selectedSubject = option.getAttribute("data-subject");
+      const bodySource = document.querySelector(
+        `#message-template-cache textarea[data-template-body=\"${option.value}\"]`
+      );
+      const selectedBody = bodySource ? bodySource.value : "";
+
+      if (selectedChannel) {
+        channel.value = selectedChannel;
+      }
+      if (selectedSubject && !subject.value.trim()) {
+        subject.value = selectedSubject;
+      }
+      if (selectedBody && !body.value.trim()) {
+        body.value = selectedBody;
+      }
+    });
+  })();
+</script>
+{% endblock %}

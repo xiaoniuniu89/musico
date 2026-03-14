@@ -1,0 +1,33 @@
+{% extends "core/base_marketing.html" %}
+
+{% block content %}
+<section class="hero">
+  <h1>The Modern Way to Manage Your Music Studio</h1>
+  <p>Streamline scheduling, automate billing, and spend more time teaching what you love. Musico is the all-in-one platform built for independent music teachers and small studios.</p>
+  <div style="display: flex; gap: 1rem; justify-content: center;">
+    <a href="{% url 'contact' %}" class="btn btn-primary">Join the Beta</a>
+    <a href="#features" class="btn btn-outline">Learn More</a>
+  </div>
+</section>
+
+<section id="features" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+  <div class="card">
+    <h3>Easy Scheduling</h3>
+    <p>Manage your calendar with ease. Set up recurring lessons, track attendance, and keep everyone on the same page.</p>
+  </div>
+  <div class="card">
+    <h3>Automated Billing</h3>
+    <p>Generate invoices automatically and get paid faster with integrated payment links. No more chasing down parents for checks.</p>
+  </div>
+  <div class="card">
+    <h3>Student Portal</h3>
+    <p>A dedicated space for students and parents to view their schedule, access resources, and track their progress.</p>
+  </div>
+</section>
+
+<section style="text-align: center;">
+  <h2>Ready to simplify your studio?</h2>
+  <p style="margin-bottom: 2rem;">We're currently in invite-only beta. Get in touch to request access.</p>
+  <a href="{% url 'contact' %}" class="btn btn-primary">Request Invite</a>
+</section>
+{% endblock %}

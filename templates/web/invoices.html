@@ -1,0 +1,161 @@
+{% extends 'web/base.html' %}
+{% load web_format %}
+{% block title %}Invoices{% endblock %}
+{% block content %}
+<style>
+  .accordion-form {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .accordion-form summary {
+    padding: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .accordion-form summary::after {
+    content: "▼";
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .accordion-form[open] summary {
+    border-bottom: 1px solid var(--line);
+  }
+  .accordion-form[open] summary::after {
+    content: "▲";
+  }
+  .accordion-form summary::-webkit-details-marker {
+    display: none;
+  }
+  .accordion-form .form-body {
+    padding: 1rem;
+  }
+</style>
+
+<div class="stack">
+  <section class="page-head">
+    <h1>Invoices</h1>
+    <p>Create invoices, send requests, and record payments.</p>
+  </section>
+
+  <details class="accordion-form">
+    <summary>Create New Invoice</summary>
+    <div class="form-body">
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_invoice" />
+        <label class="field">
+          <span>Family</span>
+          <select name="family_id" required>
+            {% for f in families %}
+              <option value="{{ f.id }}">{{ f.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field">
+          <span>Due Date</span>
+          <input type="date" name="due_date" value="{{ invoice_due_date_default }}" required />
+        </label>
+        <label class="field">
+          <span>Currency</span>
+          <select name="currency">
+            {% for code in currency_choices %}
+              <option value="{{ code }}" {% if code == tenant_currency %}selected{% endif %}>
+                {{ code }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field span-2">
+          <span>Item Description</span>
+          <input name="item_description" value="Lesson" />
+        </label>
+        <label class="field">
+          <span>Qty</span>
+          <input name="item_quantity" value="1" />
+        </label>
+        <label class="field">
+          <span>Unit Price (Cents)</span>
+          <input type="number" name="item_unit_price_cents" value="3000" min="0" />
+        </label>
+        <button type="submit">Create Invoice</button>
+      </form>
+    </div>
+  </details>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Invoice List</h2>
+      <span class="muted">{{ invoices|length }} total</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in invoices %}
+            <tr>
+              <td>{{ inv.invoice_number }}</td>
+              <td>
+                {% if inv.status == 'paid' %}
+                  <span class="pill success">paid</span>
+                {% elif inv.status == 'overdue' %}
+                  <span class="pill warn">overdue</span>
+                {% elif inv.status == 'void' %}
+                  <span class="pill error">void</span>
+                {% else %}
+                  <span class="pill">{{ inv.status }}</span>
+                {% endif %}
+              </td>
+              <td>{{ inv.total_cents|money_from_cents:inv.currency }}</td>
+              <td>{{ inv.created_at|date:"SHORT_DATE_FORMAT" }}</td>
+              <td>
+                {% if inv.status != 'paid' and inv.status != 'void' %}
+                  <div class="inline-actions">
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="send_invoice" />
+                      <input type="hidden" name="invoice_id" value="{{ inv.id }}" />
+                      <button class="alt sm" type="submit">Send</button>
+                    </form>
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="create_pay_link" />
+                      <input type="hidden" name="invoice_id" value="{{ inv.id }}" />
+                      <button class="alt sm" type="submit">Pay Link</button>
+                    </form>
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="mark_paid_manual" />
+                      <input type="hidden" name="invoice_id" value="{{ inv.id }}" />
+                      <button class="sm" type="submit">Mark Paid</button>
+                    </form>
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="muted">No invoices yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'web/base.html' %}
+{% block title %}Portal{% endblock %}
+{% block content %}
+<div class="stack">
+  <section class="page-head">
+    <h1>Portal Preview</h1>
+    <p>Role-scoped parent/student experience backed by API endpoints.</p>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Account Settings</h2>
+      <span class="muted">Personalize your portal experience.</span>
+    </div>
+    <form method="post" class="form-grid">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_language" />
+      <label class="field span-2">
+        <span>Preferred Language</span>
+        <select name="preferred_language">
+          <option value="">(Studio Default: {{ tenant.locale }})</option>
+          {% for code, name in locale_choices %}
+            <option value="{{ code }}" {% if membership.preferred_language == code %}selected{% endif %}>
+              {{ name }}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Save Preference</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Available Endpoints</h2>
+    </div>
+    <div class="stack" style="gap:0.45rem;">
+      <code>/api/portal/me/overview/</code>
+      <code>/api/portal/me/calendar/</code>
+      <code>/api/portal/me/invoices/</code>
+      <code>/api/portal/me/resources/</code>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Next UI Iteration</h2>
+    </div>
+    <p class="muted">Build a dedicated portal shell with attendance, billing, files, and messages.</p>
+  </section>
+</div>
+{% endblock %}

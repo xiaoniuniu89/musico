@@ -1,0 +1,138 @@
+{% extends 'web/base.html' %}
+{% block title %}Domains{% endblock %}
+{% block content %}
+<div class="stack">
+  <section class="page-head">
+    <h1>Domains</h1>
+    <p>Register custom hosts, verify DNS TXT records, and set a primary domain.</p>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Studio Preferences</h2>
+      <span class="muted">Locale, currency, and timezone</span>
+    </div>
+    <form method="post" class="form-grid">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_preferences" />
+      <label class="field">
+        <span>Locale</span>
+        <select name="locale">
+          {% for code, label in locale_choices %}
+            <option value="{{ code }}" {% if code == tenant_locale %}selected{% endif %}>
+              {{ label }} ({{ code }})
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Currency</span>
+        <select name="currency">
+          {% for code in currency_choices %}
+            <option value="{{ code }}" {% if code == tenant_currency %}selected{% endif %}>
+              {{ code }}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field span-2">
+        <span>Timezone</span>
+        <select name="timezone">
+          {% for tz in timezone_choices %}
+            <option value="{{ tz }}" {% if tz == tenant_timezone %}selected{% endif %}>
+              {{ tz }}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Save Preferences</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Add Custom Domain</h2>
+    </div>
+    <form method="post" class="form-grid">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create_domain" />
+      <label class="field span-2">
+        <span>Host</span>
+        <input name="host" placeholder="app.fake-school.com" required />
+      </label>
+      <label class="field">
+        <span>Primary Domain</span>
+        <select name="is_primary">
+          <option value="">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </label>
+      <button type="submit">Request Domain</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Configured Domains</h2>
+      <span class="muted">{{ domains|length }} total</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Host</th>
+            <th>Verification</th>
+            <th>SSL</th>
+            <th>TXT Record</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in domains %}
+            <tr>
+              <td>
+                {% if d.is_primary %}
+                  <strong>{{ d.host }}</strong> <span class="pill success">primary</span>
+                {% else %}
+                  {{ d.host }}
+                {% endif %}
+              </td>
+              <td><span class="pill">{{ d.verification_status }}</span></td>
+              <td><span class="pill">{{ d.ssl_status }}</span></td>
+              <td>
+                <div class="muted">{{ d.txt_record_name }}</div>
+                <div class="muted">{{ d.txt_record_value }}</div>
+              </td>
+              <td>
+                <div class="inline-actions">
+                  {% if d.domain_type == 'custom_domain' %}
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="verify_domain" />
+                      <input type="hidden" name="domain_id" value="{{ d.id }}" />
+                      <input type="hidden" name="txt_records" value="{{ d.txt_record_value }}" />
+                      <button class="alt sm" type="submit">Auto Verify</button>
+                    </form>
+                  {% endif %}
+                  {% if not d.is_primary %}
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="set_primary" />
+                      <input type="hidden" name="domain_id" value="{{ d.id }}" />
+                      <button class="sm" type="submit">Set Primary</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="muted">No domains configured yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

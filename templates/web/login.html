@@ -1,0 +1,31 @@
+{% extends "core/base_marketing.html" %}
+
+{% block title %}Log In - Musico{% endblock %}
+
+{% block content %}
+<section style="max-width: 440px; margin: 0 auto;">
+  <div class="card">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <h1>Welcome Back</h1>
+      <p>Log in to manage your music studio.</p>
+    </div>
+
+    <form method="post" action="{% url 'web_login' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="identifier">Email or Username</label>
+        <input type="text" id="identifier" name="identifier" value="{{ identifier|default:'' }}" required placeholder="jane@example.com">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+    </form>
+  </div>
+  
+  <p style="text-align: center; margin-top: 1.5rem;">
+    Don't have an account? <a href="{% url 'signup' %}">Request beta access</a>.
+  </p>
+</section>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'web/base.html' %}
+{% block title %}Students{% endblock %}
+{% block content %}
+<style>
+  .accordion-form {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .accordion-form summary {
+    padding: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .accordion-form summary::after {
+    content: "▼";
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .accordion-form[open] summary {
+    border-bottom: 1px solid var(--line);
+  }
+  .accordion-form[open] summary::after {
+    content: "▲";
+  }
+  .accordion-form summary::-webkit-details-marker {
+    display: none;
+  }
+  .accordion-form .form-body {
+    padding: 1rem;
+  }
+</style>
+
+<div class="stack">
+  <section class="page-head">
+    <h1>Students</h1>
+    <p>Create families, add students, and archive inactive records.</p>
+  </section>
+
+  <section class="split-grid">
+    {% if active_role == 'owner' or active_role == 'admin' or active_role == 'staff' or active_role == 'teacher' %}
+      <details class="accordion-form">
+        <summary>Create Family</summary>
+        <div class="form-body">
+          <form method="post" class="form-grid">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_family" />
+            <label class="field span-2">
+              <span>Name</span>
+              <input name="family_name" required />
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input type="email" name="family_email" />
+            </label>
+            <label class="field">
+              <span>Phone</span>
+              <input name="family_phone" />
+            </label>
+            <button type="submit">Create Family</button>
+          </form>
+        </div>
+      </details>
+
+      <details class="accordion-form">
+        <summary>Create Student</summary>
+        <div class="form-body">
+          <form method="post" class="form-grid">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_student" />
+            <label class="field span-2">
+              <span>Family</span>
+              <select name="family_id" required>
+                {% for f in families %}
+                  <option value="{{ f.id }}">{{ f.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="field">
+              <span>First Name</span>
+              <input name="first_name" required />
+            </label>
+            <label class="field">
+              <span>Last Name</span>
+              <input name="last_name" required />
+            </label>
+            <label class="field">
+              <span>Instrument</span>
+              <input name="instrument" />
+            </label>
+            <label class="field">
+              <span>Level</span>
+              <input name="level" />
+            </label>
+            <button type="submit">Create Student</button>
+          </form>
+        </div>
+      </details>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Student List</h2>
+      <span class="muted">{{ students|length }} total</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Family</th>
+            <th>Instrument</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+            <tr>
+              <td>{{ s.full_name }}</td>
+              <td>{{ s.family.name }}</td>
+              <td>{% if s.instrument %}{{ s.instrument }}{% else %}-{% endif %}</td>
+              <td>
+                {% if s.is_archived %}
+                  <span class="pill warn">Archived</span>
+                {% else %}
+                  <span class="pill success">Active</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if not s.is_archived %}
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="archive_student" />
+                    <input type="hidden" name="student_id" value="{{ s.id }}" />
+                    <button class="warn sm" type="submit">Archive</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="muted">No students yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

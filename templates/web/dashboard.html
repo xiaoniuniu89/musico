@@ -1,0 +1,71 @@
+{% extends 'web/base.html' %}
+{% load web_format %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="stack">
+  <section class="page-head">
+    <h1>Studio Dashboard</h1>
+    <p>Track lessons, billing, and communication in one place.</p>
+  </section>
+
+  <section class="stats-grid">
+    <article class="stat">
+      <div class="label">Upcoming Lessons</div>
+      <div class="value">{{ upcoming_events|length }}</div>
+      <div class="sub">Next scheduled sessions</div>
+    </article>
+    {% if active_role == 'owner' or active_role == 'admin' or active_role == 'staff' or outstanding_count > 0 %}
+    <article class="stat">
+      <div class="label">Outstanding Invoices</div>
+      <div class="value">{{ outstanding_count }}</div>
+      <div class="sub">{{ outstanding_total|money_from_cents:tenant_currency }} due</div>
+    </article>
+    {% endif %}
+    {% if summary %}
+    <article class="stat">
+      <div class="label">Payments (30 Days)</div>
+      <div class="value">{{ summary.payments_succeeded_count }}</div>
+      <div class="sub">Successful checkouts</div>
+    </article>
+    <article class="stat">
+      <div class="label">Messages (30 Days)</div>
+      <div class="value">{{ summary.messages_by_channel|length }}</div>
+      <div class="sub">Channels active</div>
+    </article>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Upcoming Events</h2>
+      <a class="text-link" href="/app/calendar/">Open calendar</a>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Student</th>
+            <th>Start</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in upcoming_events %}
+            <tr>
+              <td>{{ e.title }}</td>
+              <td>{% if e.student %}{{ e.student.full_name }}{% else %}-{% endif %}</td>
+              <td>{{ e.start_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+              <td><span class="pill">{{ e.status }}</span></td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="muted">No upcoming events yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

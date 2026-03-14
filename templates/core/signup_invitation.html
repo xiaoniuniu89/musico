@@ -1,0 +1,22 @@
+{% extends "core/base_marketing.html" %}
+
+{% block title %}Sign Up - Musico{% endblock %}
+
+{% block content %}
+<section style="max-width: 600px; margin: 0 auto; text-align: center;">
+  <div class="card">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">💌</div>
+    <h1>Invitation Only</h1>
+    <p style="margin-bottom: 2rem;">Musico is currently in private beta. To ensure the best experience for our early users, we're slowly rolling out access via invitations.</p>
+    
+    <div style="display: grid; gap: 1rem;">
+      <a href="{% url 'contact' %}" class="btn btn-primary">Request Invitation</a>
+      <p style="font-size: 0.9rem; color: var(--ink-soft);">Already have an invite? Check your email for your unique signup link.</p>
+    </div>
+  </div>
+  
+  <p style="margin-top: 2rem;">
+    Already have an account? <a href="{% url 'web_login' %}">Log in here</a>.
+  </p>
+</section>
+{% endblock %}

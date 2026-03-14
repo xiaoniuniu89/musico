@@ -1,0 +1,212 @@
+{% extends 'web/base.html' %}
+{% block title %}Calendar{% endblock %}
+{% block content %}
+<style>
+  .accordion-form {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .accordion-form summary {
+    padding: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .accordion-form summary::after {
+    content: "▼";
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .accordion-form[open] summary {
+    border-bottom: 1px solid var(--line);
+  }
+  .accordion-form[open] summary::after {
+    content: "▲";
+  }
+  .accordion-form summary::-webkit-details-marker {
+    display: none;
+  }
+  .accordion-form .form-body {
+    padding: 1rem;
+  }
+</style>
+
+<div class="stack">
+  <section class="page-head">
+    <h1>Calendar</h1>
+    <p>Schedule lessons, track attendance, and cancel sessions when needed.</p>
+  </section>
+
+  <details class="accordion-form">
+    <summary>Create New Event</summary>
+    <div class="form-body">
+      <p class="muted" style="margin-bottom: 0.7rem;">
+        Tip: leave <strong>End</strong> empty and the app will use <strong>Duration</strong>.
+      </p>
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_event" />
+        <label class="field span-2">
+          <span>Quick Preset</span>
+          <select id="event-preset">
+            <option value="">(none)</option>
+            {% for p in event_quick_presets %}
+              <option value="{{ p.title }}||{{ p.event_type }}||{{ p.duration_minutes }}">{{ p.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field span-2">
+          <span>Title</span>
+          <input id="event-title" name="title" required placeholder="Weekly Guitar Lesson" />
+        </label>
+        <label class="field">
+          <span>Type</span>
+          <select id="event-type" name="event_type">
+            {% for value, label in event_type_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field">
+          <span>Student</span>
+          <select name="student_id">
+            <option value="">(none)</option>
+            {% for s in students %}
+              <option value="{{ s.id }}">{{ s.full_name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field">
+          <span>Recurrence</span>
+          <select name="recurrence_type">
+            <option value="none">none</option>
+            <option value="weekly">weekly</option>
+            <option value="daily">daily</option>
+            <option value="monthly">monthly</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Start</span>
+          <input
+            type="datetime-local"
+            name="start_at"
+            value="{{ event_default_start }}"
+            required
+          />
+        </label>
+        <label class="field">
+          <span>End (optional)</span>
+          <input type="datetime-local" name="end_at" value="{{ event_default_end }}" />
+        </label>
+        <label class="field">
+          <span>Duration (minutes)</span>
+          <input id="event-duration" type="number" name="duration_minutes" value="{{ event_default_duration }}" min="5" />
+        </label>
+        <label class="field">
+          <span>Interval</span>
+          <input type="number" name="recurrence_interval" value="1" min="1" />
+        </label>
+        <label class="field">
+          <span>Until</span>
+          <input type="date" name="recurrence_until" />
+        </label>
+        <label class="field span-2">
+          <span>Notes</span>
+          <textarea name="notes" placeholder="Any context for the lesson or meeting"></textarea>
+        </label>
+        <button type="submit" title="Creates the event and optional recurrence in one step">Save Event</button>
+      </form>
+    </div>
+  </details>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Events</h2>
+      <span class="muted">{{ events|length }} shown</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Start</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in events %}
+            <tr>
+              <td>{{ e.title }}</td>
+              <td>{{ e.get_event_type_display }}</td>
+              <td>{{ e.start_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+              <td><span class="pill">{{ e.status }}</span></td>
+              <td>
+                <div class="inline-actions">
+                  {% if e.student_id %}
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="mark_attendance" />
+                      <input type="hidden" name="event_id" value="{{ e.id }}" />
+                      <input type="hidden" name="student_id" value="{{ e.student_id }}" />
+                      <input type="hidden" name="status" value="present" />
+                      <button class="alt sm" type="submit" title="Mark this student present">Present</button>
+                    </form>
+                  {% endif %}
+                  {% if e.status != 'cancelled' %}
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="cancel_event" />
+                      <input type="hidden" name="event_id" value="{{ e.id }}" />
+                      <button class="warn sm" type="submit" title="Cancel this event only">Cancel</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="muted">No events in range.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script>
+  (() => {
+    const preset = document.getElementById("event-preset");
+    const title = document.getElementById("event-title");
+    const type = document.getElementById("event-type");
+    const duration = document.getElementById("event-duration");
+    if (!preset || !title || !type || !duration) {
+      return;
+    }
+
+    preset.addEventListener("change", () => {
+      if (!preset.value) {
+        return;
+      }
+      const [presetTitle, presetType, presetDuration] = preset.value.split("||");
+      if (presetTitle && !title.value.trim()) {
+        title.value = presetTitle;
+      }
+      if (presetType) {
+        type.value = presetType;
+      }
+      if (presetDuration) {
+        duration.value = presetDuration;
+      }
+    });
+  })();
+</script>
+{% endblock %}

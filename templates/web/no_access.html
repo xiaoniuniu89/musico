@@ -1,0 +1,9 @@
+{% extends 'web/base.html' %}
+{% block title %}No Access{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>No Tenant Access</h1>
+  <p>Your user is signed in, but no active tenant membership could be resolved for this host/session.</p>
+  <p class="muted">Ask an admin to add your membership or switch to a tenant where you have access.</p>
+</div>
+{% endblock %}

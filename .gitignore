@@ -1,0 +1,25 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# Local env
+.env
+
+# Build/test outputs
+.coverage
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+
+# Django artifacts
+db.sqlite3
+staticfiles/
+media/
+
+# OS files
+.DS_Store

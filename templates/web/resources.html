@@ -1,0 +1,241 @@
+{% extends 'web/base.html' %}
+{% block title %}Resources{% endblock %}
+{% block content %}
+<div class="stack">
+  <section class="page-head">
+    <h1>Resources</h1>
+    <p>Create once, reuse often, and assign quickly to students or families.</p>
+  </section>
+
+  <section class="split-grid">
+    <article class="card">
+      <div class="card-head">
+        <h2>Create Resource</h2>
+        <span class="muted">Manual or from template.</span>
+      </div>
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_resource" />
+        <label class="field span-2">
+          <span>Resource Template</span>
+          <select id="resource-template-select" name="template_id">
+            <option value="">(none)</option>
+            {% for t in resource_templates %}
+              <option
+                value="{{ t.id }}"
+                data-title="{{ t.title|escapejs }}"
+                data-description="{{ t.description|escapejs }}"
+                data-file-path="{{ t.file_path|escapejs }}"
+                data-external-url="{{ t.external_url|escapejs }}"
+              >
+                {{ t.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field span-2">
+          <span>Title</span>
+          <input id="resource-title" name="title" required placeholder="Warmup Pattern - Week 3" />
+        </label>
+        <label class="field span-2">
+          <span>Description</span>
+          <textarea id="resource-description" name="description"></textarea>
+        </label>
+        <label class="field">
+          <span>File Path</span>
+          <input id="resource-file-path" name="file_path" placeholder="resources/lesson-1.pdf" />
+        </label>
+        <label class="field">
+          <span>External URL</span>
+          <input id="resource-external-url" name="external_url" />
+        </label>
+        <button type="submit">Create Resource</button>
+      </form>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h2>Save Resource Template</h2>
+      </div>
+      <p class="muted" style="margin-bottom: 0.7rem;">
+        Templates store resource details plus optional assignment defaults.
+      </p>
+      <form method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_resource_template" />
+        <label class="field span-2">
+          <span>Template Name</span>
+          <input name="template_name" required placeholder="Scales worksheet pack" />
+        </label>
+        <label class="field span-2">
+          <span>Resource Title</span>
+          <input name="template_title" required placeholder="C Major Scales" />
+        </label>
+        <label class="field span-2">
+          <span>Description</span>
+          <textarea name="template_description"></textarea>
+        </label>
+        <label class="field">
+          <span>File Path</span>
+          <input name="template_file_path" placeholder="resources/scales/c-major.pdf" />
+        </label>
+        <label class="field">
+          <span>External URL</span>
+          <input name="template_external_url" />
+        </label>
+        <label class="field">
+          <span>Default Due Days</span>
+          <input type="number" min="0" name="template_assignment_due_days" placeholder="7" />
+        </label>
+        <label class="field span-2">
+          <span>Default Assignment Note</span>
+          <textarea name="template_assignment_note" placeholder="Practice this slowly with metronome at 70bpm."></textarea>
+        </label>
+        <button type="submit">Save Template</button>
+      </form>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Assign Resource</h2>
+      <span class="muted">Pick resource + target + optional defaults.</span>
+    </div>
+    <form method="post" class="form-grid">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="assign_resource" />
+      <label class="field span-2">
+        <span>Resource</span>
+        <select name="resource_id">
+          {% for r in resources %}
+            <option value="{{ r.id }}">{{ r.title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field span-2">
+        <span>Assignment Template (optional)</span>
+        <select name="resource_template_id">
+          <option value="">(none)</option>
+          {% for t in resource_templates %}
+            <option value="{{ t.id }}">
+              {{ t.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Student</span>
+        <select name="student_id">
+          <option value="">(optional)</option>
+          {% for s in students %}
+            <option value="{{ s.id }}">{{ s.full_name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Family</span>
+        <select name="family_id">
+          <option value="">(optional)</option>
+          {% for f in families %}
+            <option value="{{ f.id }}">{{ f.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Due Date</span>
+        <input type="date" name="due_date" value="{{ resource_due_date_default }}" />
+      </label>
+      <label class="field span-2">
+        <span>Note</span>
+        <textarea name="note" placeholder="Optional instruction for the student/family"></textarea>
+      </label>
+      <button type="submit">Assign Resource</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Resource Templates</h2>
+      <span class="muted">{{ resource_templates|length }} active</span>
+    </div>
+    <div class="inline-actions">
+      {% for t in resource_templates %}
+        <span class="pill">{{ t.name }}</span>
+      {% empty %}
+        <span class="muted">No templates yet.</span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Assignments</h2>
+      <span class="muted">{{ assignments|length }} total</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Resource</th>
+            <th>Student</th>
+            <th>Family</th>
+            <th>Due</th>
+            <th>Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in assignments %}
+            <tr>
+              <td>{{ a.resource.title }}</td>
+              <td>{% if a.student %}{{ a.student.full_name }}{% else %}-{% endif %}</td>
+              <td>{% if a.family %}{{ a.family.name }}{% else %}-{% endif %}</td>
+              <td>{% if a.due_date %}{{ a.due_date|date:"SHORT_DATE_FORMAT" }}{% else %}-{% endif %}</td>
+              <td>{{ a.assigned_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="muted">No assignments yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script>
+  (() => {
+    const templateSelect = document.getElementById("resource-template-select");
+    const title = document.getElementById("resource-title");
+    const description = document.getElementById("resource-description");
+    const filePath = document.getElementById("resource-file-path");
+    const externalUrl = document.getElementById("resource-external-url");
+    if (!templateSelect || !title || !description || !filePath || !externalUrl) {
+      return;
+    }
+
+    templateSelect.addEventListener("change", () => {
+      const option = templateSelect.options[templateSelect.selectedIndex];
+      if (!option || !option.value) {
+        return;
+      }
+      const templateTitle = option.getAttribute("data-title");
+      const templateDescription = option.getAttribute("data-description");
+      const templateFilePath = option.getAttribute("data-file-path");
+      const templateExternalUrl = option.getAttribute("data-external-url");
+
+      if (templateTitle && !title.value.trim()) {
+        title.value = templateTitle;
+      }
+      if (templateDescription && !description.value.trim()) {
+        description.value = templateDescription;
+      }
+      if (templateFilePath && !filePath.value.trim()) {
+        filePath.value = templateFilePath;
+      }
+      if (templateExternalUrl && !externalUrl.value.trim()) {
+        externalUrl.value = templateExternalUrl;
+      }
+    });
+  })();
+</script>
+{% endblock %}

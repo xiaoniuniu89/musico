@@ -1,0 +1,35 @@
+{% extends "core/base_marketing.html" %}
+
+{% block title %}Request Beta Access - Musico{% endblock %}
+
+{% block content %}
+<section style="max-width: 600px; margin: 0 auto;">
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <h1>Join the Musico Beta</h1>
+    <p>Tell us a bit about your studio and we'll be in touch with an invite shortly.</p>
+  </div>
+
+  <div class="card">
+    <form method="post" action="{% url 'contact' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="name">Your Name</label>
+        <input type="text" id="name" name="name" required placeholder="Jane Doe">
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required placeholder="jane@example.com">
+      </div>
+      <div class="form-group">
+        <label for="message">About Your Studio</label>
+        <textarea id="message" name="message" required placeholder="Tell us how many students you have, what instruments you teach, and what you're looking for in a studio management tool."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Request</button>
+    </form>
+  </div>
+  
+  <p style="text-align: center; margin-top: 1.5rem;">
+    Already have an account? <a href="{% url 'web_login' %}">Log in here</a>.
+  </p>
+</section>
+{% endblock %}

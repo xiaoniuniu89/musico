@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: musico-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: musico
+    ports:
+      - "5432:5432"
+    volumes:
+      - musico_pgdata:/var/lib/postgresql/data
+
+volumes:
+  musico_pgdata:
